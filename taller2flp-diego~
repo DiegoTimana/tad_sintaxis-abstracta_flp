@@ -1,0 +1,12 @@
+#lang eopl
+;la base 32 utiliza simbolos del 0-31
+( define zero ( lambda ( ) '( ) ) )
+
+( define is-zero? ( lambda ( n ) ( null? n ) ) )
+
+( define successor ( lambda ( n ) (if (is-zero? n)(cons 1 n)
+                                      (if (< (car n) 31)
+                                      (cons (+(car n) 1) (cdr n))
+                                            (cons 0 (successor (cdr n)))))) ) 
+
+( define predecessor ( lambda ( n ) ( cdr n ) ) )
