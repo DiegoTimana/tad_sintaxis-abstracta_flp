@@ -9,13 +9,27 @@
                                       (cons (+(car n) 1) (cdr n))
                                             (cons 0 (successor (cdr n)))))) ) 
 
-( define predecessor ( lambda ( n ) (if (is-zero? n)( zero )
-                                        (if (and(>= (ca  (cons 31 (predecessor (cdr n) ) )
-                                                        (cons 0 (predecessor (cdr n) ) ) ) ) ) ) ) ) 
-r n) 1 ) (>(length n)1)) ;;(not (is-zero?(cdr n)))
-                                            (cons (-(car n)1 ) (cdr n) )
-                                            (if (and(eq?(length n)1) (>(car n) 1 ) ) 
-                                                    (cons (-(car n)1 ) (predecessor (cdr n) ) )
-                                                     (if (and (is-zero?(cdr n)) (eq?(car n)1))
-                                                         (cons 31 (predecessor (cdr n) ) )
-                                                          (cons 0 (predecessor (cdr n) ) ) ) ) ) ) ) ) 
+( define predecessor ( lambda ( n ) (if (and(eq?(car n)0)(not(>(length n)1)))(eopl:error "no hay predecesor del 0" )
+                                        (cond
+                                          [(and (>(car n)0) (not (is-zero?(cdr n))) ) (cons(-(car n)1) (cdr n)) ]
+                                          [(eq?(length n)1) (list (- (car n) 1))]
+                                          [(and (>(car n)0) (not (is-zero?(cdr n))) (not(eq?(car n)1))) (cons(-(car n)1) (cdr n)) ]; 
+                                          [(and(eq? (car n ) 0 ) (is-zero?(cddr n)) (>(cadr n)1) ) (list 0 (-(cadr n)1))]
+                                          [(and(eq? (car n ) 0 )(not (is-zero?(cddr n)))) (cons 0 (predecessor (cdr n)))  ]
+                                          [else (cons 31 (zero)) ]))))
+                                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                
