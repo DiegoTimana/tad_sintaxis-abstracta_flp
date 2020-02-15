@@ -1,22 +1,64 @@
 #lang eopl
-;la base 32 utiliza simbolos del 0-31
-( define zero ( lambda ( ) '( ) ) )
+;PUNTO 1
+;la base 32 utiliza simbolos del 0-31 INTERFAZ
+( define zero ( lambda ( ) '(0) ) )
 
-( define is-zero? ( lambda ( n ) ( null? n ) ) )
+( define is-zero? ( lambda ( n ) (and(eq?(length n)1) (eq? (car n) 0) ) ))
 
-( define successor ( lambda ( n ) (if (is-zero? n)(cons 1 n)
+( define successor ( lambda ( n ) (if (or (null? n)(is-zero? n))(list 1)
                                       (if (< (car n) 31)
                                       (cons (+(car n) 1) (cdr n))
                                             (cons 0 (successor (cdr n)))))) ) 
 
-( define predecessor ( lambda ( n ) (if (and(eq?(car n)0)(not(>(length n)1)))(eopl:error "no hay predecesor del 0" )
-                                        (cond
+( define predecessor ( lambda ( n )     (cond
+                                          [(or (null? n)(is-zero? n))(eopl:error "no hay predecesor del 0" )]
                                           [(and (>(car n)0) (not (is-zero?(cdr n))) ) (cons(-(car n)1) (cdr n)) ]
-                                          [(eq?(length n)1) (list (- (car n) 1))]
-                                          [(and (>(car n)0) (not (is-zero?(cdr n))) (not(eq?(car n)1))) (cons(-(car n)1) (cdr n)) ]; 
-                                          [(and(eq? (car n ) 0 ) (is-zero?(cddr n)) (>(cadr n)1) ) (list 0 (-(cadr n)1))]
-                                          [(and(eq? (car n ) 0 )(not (is-zero?(cddr n)))) (cons 0 (predecessor (cdr n)))  ]
-                                          [else (cons 31 (zero)) ]))))
+                                          [(and (>(car n)0) (eq?(length n)1))        (list (- (car n) 1))] 
+                                          [(and(eq? (car n ) 0 ) (null?(cddr n)) (>(cadr n)1) ) (list 31 (-(cadr n)1))]
+                                          [(and(eq? (car n ) 0 )(not (null?(cddr n)))) (cons 0 (predecessor (cdr n)))  ]
+                                          [else (cons 31 '()) ])))
+;CODIGO CLIENTE
+(define suma
+  (lambda (x y)
+    (if (is-zero? x)
+        y
+        (successor (suma (predecessor x) y)))))
+
+(define resta
+  (lambda (x y)
+    (if (is-zero? y)
+        x
+        (predecessor (resta  x (predecessor y))))))
+
+(define multiplicacion
+  (lambda (x y)
+    (if (is-zero? x)
+        (zero)
+        (suma (multiplicacion (predecessor x) y) y))
+    ))
+    
+(define potencia
+  (lambda (x y)
+    (if (is-zero? y)
+        (successor y)
+        (multiplicacion (potencia x (predecessor y)) x))))
+
+(define factorial
+  (lambda (n)
+    (if (is-zero? n)
+        (successor n)
+        (multiplicacion n (factorial (predecessor n))))))
+
+;PRUEBAS
+(suma '(4 3) '(20 15)) ;resultado esperado (24 18)
+(suma '(28 11 5) '(20 26))  ;resultado esperado (22 0 6)
+(multiplicacion '(20) '(20)) ; resultado esperado (16 12)
+(multiplicacion '(0 1) '(30)) ; resultado esperado (0 30)
+(potencia '(2) '(10)) ;resultado esperado (0 0 1)
+(potencia '(9) '(3)) ;resultado esperado (22 25)
+(factorial '(6)) ;resultado esperado (16 22)
+
+
                                         
 
 
