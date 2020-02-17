@@ -58,20 +58,135 @@
 (potencia '(9) '(3)) ;resultado esperado (22 25)
 (factorial '(6)) ;resultado esperado (16 22)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-                                        
+;PUNTO 2
 
+;Gramatica --->  Diff-tree ::= (one)
+;                              (diff  Diff-tree  Diff-tree)
 
+;Definicion de zero
 
-
-
-
-
-
-
-
+(define zeroDiff (lambda () '(diff (one) (one))))
 
 
+;Definicion del procedimiento observador is-zero
+
+;Funcion auxiliar que suma los valores de las hojas del arbol para determinar el valor
+
+(define is-zeroAux (lambda (diff-tree)
+                    (cond
+                      [(eqv? diff-tree 'one) 1]
+                      [(eqv?(car diff-tree) 'one) 1]
+                      (else (- (is-zeroAux (cadr diff-tree)) (is-zeroAux (caddr diff-tree)))))))
+
+;Funcion is-zero que recibe el valor de la funcion auxiliar y determina si es cero
+
+(define is-zeroD? (lambda (diff-tree) (if (eqv? (is-zeroAux diff-tree) 0) #t #f)))
+
+;Definicion procedimiento predecessor
+
+(define predecessorD (lambda (diff-tree) (cond
+                                           [(is-zeroD? diff-tree) '(diff (diff one one) one)]
+                                           [(eqv? (car diff-tree) 'one) '(diff one one)]
+                                           (else (cons 'diff (list diff-tree 'one))))))
+
+;Definicion procedimiento successor
+
+(define successorD (lambda (diff-tree) (if (is-zeroD? diff-tree)
+                                          '(diff one (diff one one))
+                                          (cons 'diff (list diff-tree '(diff (diff one one) one))))))                                        
+
+;Definicion procedimiento diff-tree-plus
+
+(define diff-tree-plus
+  (lambda (x y)
+    (if (is-zeroD? x)
+        y
+        (successorD (diff-tree-plus (predecessorD x) y)))))
 
 
-                                
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PUNTO 4
+;;;; Ambientes - Representación como listas ;;;;;;;;;;;;;;;;;;;;
+
+;; GRAMATICA DEL AMBIENTE
+;; Env-exp :: = (empty-env)
+;;         :: = (extend-env Identifier Scheme-value Env-exp)
+
+
+;; empty-env
+(define empty-env
+  (lambda () (list 'empty-env)))
+
+;; extend-env
+(define extend-env
+  (lambda (var val env)
+    (list 'extend-env var val env)))
+
+;; extend-env*
+(define extend-env*
+(lambda (vars vals env)
+(list 'extend-env* vars vals env)))
+
+;; apply-env
+(define apply-env
+  (lambda (env search-var)
+    (cond ((eqv? (car env) 'empty-env)
+           (eopl:error 'apply-env "No binding for ~s" search-var))
+          ((eqv? (car env) 'extend-env)
+           (let ((saved-var (cadr env))
+                 (saved-val (caddr env))
+                 (saved-env (cadddr env)))
+             (if (eqv? search-var saved-var)
+                 saved-val
+                 (apply-env saved-env search-var))))
+          (else (eopl:error 'apply-env "Expecting an environment, given ~s" env)))))
+
+;; funcion auxiliar index que sirve para encontrar cuantos niveles tiene el ambiente
+(define index
+  (lambda (env)
+    (cond [(eqv?(car env) 'empty-env) 0]
+          [(eqv?(car env) 'extend-env) (+ 1 (index (cadddr env)))]
+          [(eqv?(car env) 'extend-env*) (+ 1 (index (cadddr env)))])))
+
+;Funcion que sirve para emparejar las variables con los valores del ambiente extend-env
+(define aux
+  (lambda (l l2)
+    (if (null? l) '() (cons (list (car l) (car l2)) (aux (cdr l) (cdr l2))))))
+
+;Funcion auxiliar que extrae las variables y sus respectivos valores del ambiente que se busca, si no halla la profundidad, lanza un error
+(define emparejar
+  (lambda (env niv index)
+    (cond [(eqv? (car env) 'empty-env) '()]
+          [(and (eqv? (car env) 'extend-env) (eqv? niv index)) (list (list (cadr env) (caddr env)))]
+          [(and (eqv? (car env) 'extend-env*) (eqv? niv index)) (aux (cadr env) (caddr env)) ]
+          [(< index niv) (eopl:error "Not possible to search depth on environment")]
+          [else (emparejar (cadddr env) niv (- index 1))])))
+
+;;Funcion principal 
+(define check-env
+  (lambda (env niv)
+    (emparejar env niv (index env))))
+
+;Ejemplo 1
+(define e
+  (extend-env 'y 8
+              (extend-env* '(x z w) '(1 4 5)
+                           (extend-env 'a 7
+                                       (empty-env)))))
+
+;;ejemplo 2
+(define a
+  (extend-env 't 5
+              (extend-env* '(x y z) '(1 2 3)
+                          (extend-env 'y 8
+                                      (extend-env 'x 7
+                                                  (extend-env 'y 14
+                                                              (empty-env)))))))
+
+; (check-env e 0) -> ()
+; (check-env e 1) -> ((a 7))
+; (check-env e 2) -> ((x 1) (z 4) (w 5))
+; (check-env e 3) -> ((y 8))
+; (check-env e 4) -> check-env: Not possible to search depth on environment
